@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DJ Collective Academy</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400&family=Syne:wght@400;700;800&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: #000;
+    overflow: hidden;
+    font-family: 'Syne', sans-serif;
+  }
+
+  canvas#bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+  }
+
+  .scene {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-weight: 300;
+    font-size: clamp(10px, 1.1vw, 15px);
+    letter-spacing: 0.45em;
+    color: rgba(255,255,255,0.45);
+    text-transform: uppercase;
+    margin-bottom: 2.4vh;
+    animation: fadeUp 1.8s ease forwards;
+  }
+
+  .brand {
+    position: relative;
+    text-align: center;
+    line-height: 0.88;
+  }
+
+  .brand-dj {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(80px, 17vw, 260px);
+    color: #fff;
+    display: block;
+    letter-spacing: 0.06em;
+    animation: fadeUp 1.6s 0.1s ease both;
+    text-shadow: 0 0 120px rgba(255,255,255,0.12);
+  }
+
+  .brand-collective {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(18px, 4vw, 62px);
+    font-weight: 800;
+    letter-spacing: 0.38em;
+    color: rgba(255,255,255,0.9);
+    text-transform: uppercase;
+    display: block;
+    animation: fadeUp 1.6s 0.2s ease both;
+  }
+
+  .divider-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 3vh 0;
+    animation: fadeUp 1.6s 0.35s ease both;
+    width: clamp(200px, 38vw, 600px);
+  }
+  .divider-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,200,80,0.7), transparent);
+  }
+  .divider-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: rgba(255,200,80,0.85);
+    box-shadow: 0 0 10px rgba(255,200,80,0.6);
+  }
+
+  .brand-academy {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(36px, 7.5vw, 116px);
+    letter-spacing: 0.22em;
+    color: rgba(255,200,80,1);
+    text-shadow:
+      0 0 40px rgba(255,200,80,0.5),
+      0 0 100px rgba(255,160,0,0.25);
+    display: block;
+    text-align: center;
+    animation: fadeUp 1.6s 0.4s ease both;
+  }
+
+  .tagline {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(9px, 0.9vw, 13px);
+    letter-spacing: 0.3em;
+    color: rgba(255,255,255,0.28);
+    text-transform: uppercase;
+    margin-top: 3.5vh;
+    animation: fadeUp 1.8s 0.6s ease both;
+  }
+
+  .corner-mark {
+    position: fixed;
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(8px, 0.75vw, 11px);
+    letter-spacing: 0.2em;
+    color: rgba(255,255,255,0.18);
+    text-transform: uppercase;
+    z-index: 20;
+    animation: fadeUp 2.2s 1s ease both;
+  }
+  .corner-mark.tl { top: 32px; left: 40px; }
+  .corner-mark.tr { top: 32px; right: 40px; text-align: right; }
+  .corner-mark.bl { bottom: 32px; left: 40px; }
+  .corner-mark.br { bottom: 32px; right: 40px; text-align: right; }
+
+  .waveform-wrap {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 22vh;
+    z-index: 5;
+    pointer-events: none;
+  }
+  canvas#wave {
+    width: 100%; height: 100%;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<div class="scene">
+  <p class="eyebrow">Austin, Texas</p>
+  <div class="brand">
+    <span class="brand-dj">DJ</span>
+    <span class="brand-collective">Collective</span>
+    <div class="divider-row">
+      <div class="divider-line"></div>
+      <div class="divider-dot"></div>
+      <div class="divider-line"></div>
+    </div>
+    <span class="brand-academy">Academy</span>
+  </div>
+  <p class="tagline">Learn · Create · Connect</p>
+</div>
+
+<div class="corner-mark tl">DJ Collective Academy</div>
+<div class="corner-mark tr" id="clock"></div>
+<div class="corner-mark bl">Austin, TX</div>
+<div class="corner-mark br">djcollectiveaustin.com</div>
+
+<div class="waveform-wrap">
+  <canvas id="wave"></canvas>
+</div>
+
+<script>
+// ── Background: floating orbs + particle field
+(function() {
+  const canvas = document.getElementById('bg');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Orbs
+  const orbs = [
+    { x: 0.18, y: 0.35, r: 0.28, color: [255,200,60],  speed: 0.00007 },
+    { x: 0.82, y: 0.65, r: 0.22, color: [180,100,255],  speed: 0.00009 },
+    { x: 0.5,  y: 0.1,  r: 0.18, color: [60,180,255],   speed: 0.00006 },
+    { x: 0.72, y: 0.15, r: 0.14, color: [255,120,80],   speed: 0.00010 },
+    { x: 0.25, y: 0.85, r: 0.16, color: [80,220,160],   speed: 0.00008 },
+  ];
+
+  // Particles
+  const PARTS = 90;
+  const parts = Array.from({ length: PARTS }, () => ({
+    x: Math.random(),
+    y: Math.random(),
+    r: Math.random() * 1.5 + 0.3,
+    vx: (Math.random() - 0.5) * 0.00015,
+    vy: (Math.random() - 0.5) * 0.00015,
+    alpha: Math.random() * 0.35 + 0.05,
+  }));
+
+  let t = 0;
+
+  function draw() {
+    t++;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#040406';
+    ctx.fillRect(0, 0, W, H);
+
+    // Draw orbs
+    orbs.forEach(o => {
+      const ox = W * (0.5 + (o.x - 0.5) * 1.0 + Math.sin(t * o.speed * 1000 + o.x * 5) * 0.07);
+      const oy = H * (0.5 + (o.y - 0.5) * 1.0 + Math.cos(t * o.speed * 900 + o.y * 5) * 0.07);
+      const radius = Math.min(W, H) * o.r;
+      const grad = ctx.createRadialGradient(ox, oy, 0, ox, oy, radius);
+      const [r, g, b] = o.color;
+      grad.addColorStop(0,   `rgba(${r},${g},${b},0.13)`);
+      grad.addColorStop(0.5, `rgba(${r},${g},${b},0.04)`);
+      grad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
+      ctx.beginPath();
+      ctx.arc(ox, oy, radius, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+    });
+
+    // Draw particles
+    parts.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0) p.x = 1;
+      if (p.x > 1) p.x = 0;
+      if (p.y < 0) p.y = 1;
+      if (p.y > 1) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x * W, p.y * H, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${p.alpha})`;
+      ctx.fill();
+    });
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── Waveform at bottom
+(function() {
+  const canvas = document.getElementById('wave');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+
+  function resize() {
+    W = canvas.width = canvas.offsetWidth * devicePixelRatio;
+    H = canvas.height = canvas.offsetHeight * devicePixelRatio;
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+  }
+  window.addEventListener('resize', () => { ctx.resetTransform(); resize(); });
+  resize();
+
+  const BARS = 120;
+  const seeds = Array.from({ length: BARS }, (_, i) => ({
+    baseH: 0.08 + Math.random() * 0.55,
+    phase: Math.random() * Math.PI * 2,
+    speed: 0.018 + Math.random() * 0.025,
+    warpSpeed: 0.007 + Math.random() * 0.009,
+  }));
+
+  let t = 0;
+
+  function drawWave() {
+    t += 0.6;
+    const cW = canvas.offsetWidth;
+    const cH = canvas.offsetHeight;
+    ctx.clearRect(0, 0, cW, cH);
+
+    const barW = cW / BARS;
+    const gap = 1.5;
+
+    seeds.forEach((s, i) => {
+      const wave1 = Math.sin(t * s.speed + s.phase);
+      const wave2 = Math.sin(t * s.warpSpeed + s.phase * 1.3) * 0.4;
+      const rawH = s.baseH + (wave1 + wave2) * 0.25;
+      const barH = Math.max(0.03, rawH) * cH;
+      const x = i * barW;
+      const y = cH - barH;
+
+      const norm = i / BARS;
+      const accent = Math.abs(wave1);
+
+      const grad = ctx.createLinearGradient(x, y, x, cH);
+      const r1 = Math.round(200 + accent * 55);
+      const g1 = Math.round(140 + accent * 60);
+      const b1 = Math.round(20 + accent * 30);
+      grad.addColorStop(0,   `rgba(${r1},${g1},${b1},0.9)`);
+      grad.addColorStop(0.5, `rgba(255,180,50,0.55)`);
+      grad.addColorStop(1,   `rgba(255,160,30,0.08)`);
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(x + gap / 2, y, barW - gap, barH, 2);
+      ctx.fill();
+    });
+
+    requestAnimationFrame(drawWave);
+  }
+  drawWave();
+})();
+
+// ── Clock in corner
+function updateClock() {
+  const el = document.getElementById('clock');
+  if (!el) return;
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  el.textContent = `${h}:${m}:${s}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+</script>
+</body>
+</html>
